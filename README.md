@@ -83,16 +83,3 @@ Vận hành server: `systemctl status 'picoquic@*' picoquic-cpu`, `journalctl -u
 cipher đã thương lượng) · `runs.csv` · `cpu.csv` · `dish.csv` · `dish.jsonl` · `summary.csv`
 (median/P25/P75 throughput, median/P95 thời gian tải, TTFB, CPU client/server, latency PoP,
 drop rate, % lượt gặp vật cản, số lượt bị throttle).
-
-## Các yếu tố có thể làm sai kết quả
-
-| Yếu tố | Cách xử lý |
-|---|---|
-| Pi bị hạ xung do thiếu điện áp hoặc quá nhiệt | Ghi `throttled_before/after` cho từng lượt; progress in `THROTTLED`; summary đếm `throttled_runs` |
-| CPU của Pi thành nút cổ chai (Cortex-A72 không có AES) | Ép ChaCha20 (`TLS13_CIPHERS`); ghi CPU của curl theo từng lượt và chuỗi 1 Hz |
-| Flow control phía nhận giới hạn throughput | Backend ngtcp2 của curl nới stream window lên 10 MiB, lớn hơn BDP của Starlink rất nhiều |
-| Lưu lượng không thực sự đi qua Starlink | `meta.json` ghi `ip route get <server>`; mặc định campaign dừng nếu không đọc được dish |
-| Ghi thẻ SD | Dữ liệu tải về được ghi vào `/dev/null` |
-| Lệch đồng hồ khi ghép log client với server | Cả hai máy đều đồng bộ NTP; `meta.json` ghi trạng thái `NTPSynchronized` |
-| Server là t3.medium (burstable): khi hết CPU credit, vCPU bị giới hạn | Ghi `steal_pct`; summary đếm `server_steal_runs`. Lượt có steal > 0 phải loại |
-| CPU server của picoquic không phản ánh chi phí tính toán của CC | `picoquicdemo` chờ trong `select()` theo từng mốc pacing (vài chục µs), nên CPU tăng theo thời gian truyền chứ không theo số byte. Đã đo: 50 MiB qua loopback tốn 0.17 CPU-s ở 2.4 Gbps; cùng 50 MiB qua WAN tốn ~4.5 CPU-s ở 85 Mbps. Năng lực gửi còn dư nhiều so với Starlink |
